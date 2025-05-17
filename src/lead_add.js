@@ -1,4 +1,3 @@
-// Вебхук Bitrix24 (використовується напряму без .env)
 const baseUrl = '<BITRIX_WEBHOOK>';
 
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
@@ -27,7 +26,6 @@ async function createLead(leadData) {
   return result.result; // Повертає ID створеного ліда
 }
 
-// Приклад виконання
 (async () => {
   try {
     // Крок 1: створюємо контакт
