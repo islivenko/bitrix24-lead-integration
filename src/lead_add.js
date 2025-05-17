@@ -1,55 +1,70 @@
-// URL для создания нового лида
-const url = '<BITRIX_WEBHOOK>/crm.lead.add.json';
+// Вебхук Bitrix24 (використовується напряму без .env)
+const baseUrl = '<BITRIX_WEBHOOK>';
 
-// Данные нового лида
-const leadData = {
-  fields: {
-    TITLE: "Заявка с сайта",
-    STATUS_ID: "NEW",
-    SOURCE_ID: "CALL",
-    COMMENTS: "[p]\nНеобходимо авто с германии\n[/p]",
-    CURRENCY_ID: "PLN",
-    OPPORTUNITY: "0.00",
-    IS_MANUAL_OPPORTUNITY: "N",
-    OPENED: "Y",
-    ASSIGNED_BY_ID: 5,
-    CREATED_BY_ID: 5,
-    CONTACT_ID: 7,
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
-    // Кастомные поля
-    UF_CRM_1742918062333: "",
-    UF_CRM_1747506866305: "Осмотр одного авто",
-    UF_CRM_1747506893883: "Седан",
-    UF_CRM_1747506949814: "Audi",
-    UF_CRM_1747507025622: "A5",
-    UF_CRM_1747507050101: "F30",
-    UF_CRM_1747507097639: "2000",
-    UF_CRM_1747507142563: "Автоматическая",
-    UF_CRM_1747507182659: "Дизель",
-    UF_CRM_1747507204879: "50000",
-    UF_CRM_1747507226113: "50000 USD",
-    UF_CRM_1747507352891: [
-      "Apple CarPlay",
-      "Android Auto",
-      "Интерфейс Bluetooth",
-      "Разъем USB",
-      "Беспроводная зарядка устройств"
-    ]
+// 1. Створення контакту
+async function createContact(contactData) {
+  const response = await fetch(`${baseUrl}/crm.contact.add.json`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: contactData })
+  });
+  const result = await response.json();
+  if (result.error) throw new Error(result.error_description);
+  return result.result; // Повертає ID створеного контакту
+}
+
+// 2. Створення ліда з прив'язкою до контакту
+async function createLead(leadData) {
+  const response = await fetch(`${baseUrl}/crm.lead.add.json`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: leadData })
+  });
+  const result = await response.json();
+  if (result.error) throw new Error(result.error_description);
+  return result.result; // Повертає ID створеного ліда
+}
+
+// Приклад виконання
+(async () => {
+  try {
+    // Крок 1: створюємо контакт
+    const contactId = await createContact({
+      NAME: "Artem",
+      PHONE: [{ VALUE: "+48 503 900 890", VALUE_TYPE: "WORK" }],
+      EMAIL: [{ VALUE: "Artem.ochigava@gmail.com", VALUE_TYPE: "WORK" }]
+    });
+
+    console.log("Створено контакт ID:", contactId);
+
+    // Крок 2: створюємо лід, пов'язаний з цим контактом
+    const leadId = await createLead({
+      TITLE: "Заявка з сайту",
+      STATUS_ID: "NEW",
+      CONTACT_ID: contactId,
+      ASSIGNED_BY_ID: 5,
+      UF_CRM_1747506949814: "Audi",
+      UF_CRM_1747507025622: "A5",
+      UF_CRM_1747506893883: "Седан",
+      UF_CRM_1747507050101: "F30",
+      UF_CRM_1747507097639: "2000",
+      UF_CRM_1747507142563: "Автоматична",
+      UF_CRM_1747507182659: "Дизель",
+      UF_CRM_1747507204879: "50000",
+      UF_CRM_1747507226113: "50000 USD",
+      UF_CRM_1747506866305: "Підбір",
+      UF_CRM_1747507352891: [
+        "Apple CarPlay",
+        "Android Auto",
+        "Інтерфейс Bluetooth"
+      ],
+      COMMENTS: "Заявка з форми сайту"
+    });
+
+    console.log("Створено лід ID:", leadId);
+  } catch (error) {
+    console.error("Помилка:", error.message);
   }
-};
-
-// Выполнение запроса
-fetch(url, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify(leadData)
-})
-.then(response => response.json())
-.then(data => {
-  console.log('Lead created:', data.result);
-})
-.catch(error => {
-  console.error('Error creating lead:', error);
-});
+})();
